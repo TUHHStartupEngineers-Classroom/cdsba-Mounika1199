@@ -3,5 +3,110 @@ title: "Directed Acyclic Graphs"
 ---
 
 ::: callout-note
-You can delete everything in here and start fresh.
 :::
+
+1.)
+dag <- dagitty('dag {
+  location -> parking_spot
+  parking_spot -> sales
+}')
+coords = list(x = c(Y = 3, Z = 2, X = 1),
+                y = c(Y = 0, Z = 0, X = 0))
+plot(dag)
+
+
+2.)
+
+customer_data<-readRDS("C:/Users/mouni/Downloads/Causal_Data_Science_Data/Causal_Data_Science_Data/customer_sat.rds")
+
+       
+model1<-lm(satisfaction~follow_ups,data=customer_data)
+summary(model1)
+
+model2<-lm(satisfaction~follow_ups+subscription,data=customer_data)
+summary(model2)
+
+coef_comp<-cbind(T1=coef(model1),T2=coef(model2))
+print(coef_comp)
+
+
+3.)
+Comparison:
+Intercept:
+In Model 1, the intercept is 78.8860.
+In Model 2, when accounting for subscription, the intercept decreases significantly to 26.7667.
+
+follow_ups:
+In Model 1, the coefficient for follow_ups is -3.3093.
+In Model 2, when accounting for subscription, the coefficient for follow_ups becomes 2.1944.
+
+subscription:
+The coefficients for both subscription levels(premium and premium+) are positive and statistically significant.
+
+The significant decrease in the intercept possibly says that, on average, satisfaction is lower when considering the impact of subscription levels.
+
+The change in the coefficient for follow_ups suggests that the relationship between follow-up calls and satisfaction is positive as it changed from (-3.3093 to 2.1944) when accounting for subscription levels. This could indicate that the effect of follow-up calls on satisfaction depends on the subscription level.
+
+Higher subscription levels, Premium and Premium+, are associated with significantly higher satisfaction. The decrease in the intercept suggests that the baseline satisfaction is lower when considering subscription levels.
+
+
+4.)
+library(dagitty)
+library(tidyverse)
+data <- dagitty('dag {
+  follow_ups -> satisfaction
+  subscription -> follow_ups
+  subscription -> satisfaction
+}')
+
+  coordinates(dag) <- list(x = c(subscription = 3, follow_ups = 2, satisfaction = 1), y = c(subscription = 0, follow_ups = 1, satisfaction = 0))
+  label <- data.frame(x = c(2, 2, 3), y = c(1, 2, 2), label = c("b1", "b2", "b3"))
+  plot(data, main = "Directed Acyclic Graph (DAG) for Relationship Analysis")
+# Plot DAG
+library(ggdag)
+ggdag(data) +
+  theme_dag_cds() + # custom theme, can be left out
+  geom_dag_point(color = ggthemr::swatch()[2]) +
+  geom_dag_text(color = "white") +
+  geom_dag_edges(edge_color = "white") +
+  geom_dag_label_repel(aes(label = label))
+  
+  
+  
+  
+  
+  
+data<-readRDS("C:/Users/mouni/Downloads/Causal_Data_Science_Data/Causal_Data_Science_Data/customer_sat.rds")
+n <- 1e+03
+
+# draw and create variables with specific dependencies
+subscription <- rnorm(n)
+follow_ups <- rnorm(n) 
+satisfaction <- rnorm(n)
+
+# rescale to realistic values
+satisfaction <- sample(20:80,1) + scales::rescale(satisfaction, to = c(0, 80))
+follow_ups <- scales::rescale(follow_ups, to = c(0, 10))
+subscription <- factor(subscription, labels = c("Premium+", "Premium"))
+
+# create tibble
+df <- tibble(
+  satisfaction,
+  follow_ups,
+  subscription
+)
+
+# Not conditioning on education
+simps_not_cond <- ggplot(df, aes(x = follow_ups, y = satisfaction)) +
+  geom_point(alpha = .8) +
+  stat_smooth(method = "lm", se = F)
+
+# Conditioning on education  
+simps_cond <- ggplot(df, aes(x = follow_ups, y = satisfaction, color = subscription)) +
+  geom_point(alpha = .8) +
+  stat_smooth(method = "lm", se = F) +
+  theme(legend.position = "right")
+
+# Plot both plots
+simps_not_cond
+simps_cond

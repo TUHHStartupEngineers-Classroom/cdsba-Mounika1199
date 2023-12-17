@@ -1,10 +1,3 @@
----
-title: "Causality"
----
-
-::: callout-note
-:::
-
 years <- 2002:2021
 cage_movies <- c(5, 7, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40)
 pool_drownings <- c(1200, 1180, 1150, 1120, 1100, 1080, 1060, 1040, 1020, 1000, 980, 960, 940, 920, 900, 880, 860, 840, 820, 800)
@@ -19,5 +12,5 @@ ggplot(data, aes(x = CageMovies, y = PoolDrownings)) +
   labs(title = "Spurious Correlation: Nicholas Cage Movies vs Pool Drownings",
        x = "Number of Nicholas Cage Movies Released",
        y = "Number of Pool Drownings")
-       
-Although the plot may suggest a correlation between the number of Nicholas Cage movies released and the number of pool drownings, this is a spurious correlation. The variables are not causally related; there's likely a confounding factor or it's just a coincidence.
+
+
