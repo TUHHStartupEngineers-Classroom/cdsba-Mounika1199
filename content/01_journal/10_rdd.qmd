@@ -3,5 +3,66 @@ title: "Regression Discontinuity"
 ---
 
 ::: callout-note
-You can delete everything in here and start fresh.
 :::
+1.
+#Original bandwidth bw=5
+
+#Half bandwidth
+```{r, echo=TRUE}
+
+coupon_data<-readRDS("C:/Users/mouni/Downloads/Causal_Data_Science_Data/Causal_Data_Science_Data/coupon.rds")
+c0=60
+half_bw<-c0+c(-2.5,2.5)
+df_half_bw_below <- coupon_data %>% filter(days_since_last >= half_bw[1] & days_since_last < c0)
+df_half_bw_above <- coupon_data %>% filter(days_since_last >= c0 & days_since_last <= half_bw[2])
+
+df_bw_half <- bind_rows(df_half_bw_above, df_half_bw_below)
+dim(df_bw_half)
+
+model_bw_half_below <- lm(purchase_after ~ days_since_last, df_half_bw_below)
+model_bw_half_above <- lm(purchase_after ~ days_since_last, df_half_bw_above)
+
+y0_half <- predict(model_bw_half_below, tibble(days_since_last = c0))
+y1_half <- predict(model_bw_half_above, tibble(days_since_last = c0))
+
+late <- y1_half - y0_half
+sprintf("LATE: %.2f", late)
+
+lm_half_bw <- lm(purchase_after ~ days_since_last_centered + coupon, df_bw_half)
+summary(lm_half_bw)
+```
+2.
+```{r, echo=TRUE}
+
+#Double bandwidth
+c0=60
+dbl_bw<-c0+c(-10,10)
+df_dbl_bw_below <- coupon_data %>% filter(days_since_last >= dbl_bw[1] & days_since_last < c0)
+df_dbl_bw_above <- coupon_data %>% filter(days_since_last >= c0 & days_since_last <= dbl_bw[2])
+
+df_bw_dbl <- bind_rows(df_dbl_bw_above, df_dbl_bw_below)
+dim(df_bw_dbl)
+
+model_bw_dbl_below <- lm(purchase_after ~ days_since_last, df_dbl_bw_below)
+model_bw_dbl_above <- lm(purchase_after ~ days_since_last, df_dbl_bw_above)
+
+y0_dbl <- predict(model_bw_dbl_below, tibble(days_since_last = c0))
+y1_dbl <- predict(model_bw_dbl_above, tibble(days_since_last = c0))
+
+late <- y1_dbl - y0_dbl
+sprintf("LATE: %.2f", late)
+
+lm_dbl_bw <- lm(purchase_after ~ days_since_last_centered + coupon, df_bw_dbl)
+summary(lm_dbl_bw)
+
+```
+3.
+```{r, echo=TRUE}
+
+shipping_data<-readRDS("C:/Users/mouni/Downloads/Causal_Data_Science_Data/Causal_Data_Science_Data/shipping.rds")
+library(rddensity)
+rddd<-rddensity(shipping_data$purchase_amount,c=30)
+summary(rddd)
+rdd_plot <- rdplotdensity(rddd, shipping_data$purchase_amount, plotN = 100)
+```
+The plot is not continuous.
