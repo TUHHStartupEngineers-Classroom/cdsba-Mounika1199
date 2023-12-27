@@ -3,5 +3,75 @@ title: "Instrumental Variables"
 ---
 
 ::: callout-note
-You can delete everything in here and start fresh.
 :::
+1.)
+```{r, echo=TRUE}
+
+rand_enc_data<-readRDS("C:/Users/mouni/Downloads/Causal_Data_Science_Data/Causal_Data_Science_Data/rand_enc.rds")
+library(dagitty)
+dag <- dagitty('dag {
+  rand_enc->used_ftr
+  used_ftr->time_spent
+}')
+coords = list(x = c(Y = 3, Z = 2, X = 1),
+                y = c(Y = 0, Z = 0, X = 0))
+plot(dag)
+```
+
+2.)
+The naive  estimate would be the simple comparison between average time spent by users who were encouraged (rand_enc=1) and those who were not (rand_enc=0).This would be biased due to potential unobserved confounders.
+```{r, echo=TRUE}
+
+library("dplyr")
+df <- rand_enc_data %>%  group_by (rand_enc) %>% 
+summarize(avg_time_spent=mean(time_spent))
+print(df)
+
+lm_naive<-lm(time_spent~used_ftr,data=rand_enc_data)
+summary(lm_naive)
+```
+3.)
+```{r, echo=TRUE}
+
+com_ins<-ggplot(rand_enc_data, aes(x = rand_enc,y=used_ftr)) +
+  geom_point(alpha=0.8) +
+  stat_smooth(method="lm",se=F)
+  labs(title = "Distribution of Encouragement Variable",
+       x = "Encouragement",
+       y = "Treat")
+com_outcome<-ggplot(rand_enc_data, aes(x = rand_enc,y=time_spent)) +
+  geom_point(alpha=0.8) +
+  stat_smooth(method="lm",se=F)
+  labs(title = "Distribution of Encouragement Variable",
+       x = "Encouragement",
+       y = "outcome")
+com_treat<-ggplot(rand_enc_data, aes(x = used_ftr,y=time_spent)) +
+  geom_point(alpha=0.8) +
+  stat_smooth(method="lm",se=F)
+  labs(title = "Distribution of Encouragement Variable",
+       x = "Treat",
+       y = "Outcome")
+com_ins
+com_outcome
+com_treat
+# Check correlations: Examine correlations between variables of interest
+cor(rand_enc_data$rand_enc, rand_enc_data$time_spent)
+cor(rand_enc_data$rand_enc, rand_enc_data$used_ftr)
+cor(rand_enc_data$used_ftr,rand_enc_data$time_spent)
+```
+4.)
+```{r, echo=TRUE}
+
+#1st method
+
+first_stage <-lm(used_ftr~rand_enc,data=rand_enc_data)
+summary(first_stage)
+second_stage <-lm(rand_enc_data$time_spent~first_stage$fitted.values)
+summary(second_stage)
+
+#2nd method
+library(estimatr)
+model <-iv_robust(time_spent~used_ftr|rand_enc,data=rand_enc_data)
+summary(model)
+```
+There is significant difference between IV estimate and naive bias estimate and thus naive estimate is biased and that used_ftr coefficient is higher than expected and thus it is an upward bias.

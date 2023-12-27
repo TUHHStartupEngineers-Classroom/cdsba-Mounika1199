@@ -3,5 +3,61 @@ title: "Matching and Subclassification"
 ---
 
 ::: callout-note
-You can delete everything in here and start fresh.
 :::
+
+1.)
+```{r, echo=TRUE}
+
+mem_data<-readRDS("C:/Users/mouni/Downloads/Causal_Data_Science_Data/Causal_Data_Science_Data/membership.rds")
+library("dagitty")
+dag <- dagitty('dag {
+  age -> pre_avg_purch
+  sex -> pre_avg_purch
+  card -> avg_purch
+}')
+
+# Plot the DAG
+plot(dag)
+```
+2.)
+```{r, echo=TRUE}
+
+naive_model <- lm(avg_purch ~ card, data = mem_data)
+summary(naive_model)
+```
+
+3.)
+
+1.
+```{r, echo=TRUE}
+
+library("MatchIt")
+cem <- matchit(card ~ age + sex + pre_avg_purch,
+               data = mem_data, 
+               method = 'cem', 
+               estimand = 'ATE')
+summary(cem)
+
+```
+
+2.
+```{r, echo=TRUE}
+
+nn <- matchit(card ~ age + sex + pre_avg_purch,
+              data = mem_data,
+              method = "nearest", # changed
+              distance = "mahalanobis", # changed
+              replace = T)
+
+# Covariate Balance
+summary(nn)
+```
+3.
+```{r, echo=TRUE}
+
+df_nn <- match.data(nn)
+
+# (2) Estimation
+model_nn <- lm(avg_purch ~ card, data = df_nn, weights = weights)
+summary(model_nn)
+```
